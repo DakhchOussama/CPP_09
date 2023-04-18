@@ -45,7 +45,15 @@ PmergeMe:: PmergeMe(int ac, char **av)
             value = av[i];
             if (!contains_only_number(value))
                 throw std:: string("Error");
-            check_num = std:: stoll(value);
+            try
+            {
+                check_num = std:: stoll(value);
+            }
+            catch(std:: exception &e)
+            {
+                std:: cout << e.what() << std:: endl;
+                exit(-1);
+            }
             if (check_num > 2147483647)
                 throw std:: string("Error");
             num = (int)check_num;

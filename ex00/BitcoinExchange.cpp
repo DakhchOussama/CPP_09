@@ -56,7 +56,6 @@ void BitcoinExchange:: parse_input(std:: string my_input)
     }
     else
         throw std:: string("No file to read");
-    input_file.close();
     if (this->data.size() == 0)
         throw std:: string("No data to read");
     if (this->data[0].find("date") != std:: string:: npos && this->data[0].find("|") != std:: string:: npos && this->data[0].find("value") != std:: string:: npos)
@@ -66,6 +65,9 @@ void BitcoinExchange:: parse_input(std:: string my_input)
     }
     else
         throw std:: string("No data found");
+    if (this->input_data.size() == 0 || this->input_data.size() == 1)
+        throw std:: string("No data found");
+
 }
 
 bool BitcoinExchange:: check_all_space(std:: string line)
@@ -99,13 +101,21 @@ std:: string BitcoinExchange:: parse_value(std:: string line)
             found_pipe = i;
     }
     for (size_t i = found_pipe + 1; i != line.size(); i++)
+        value += line[i];
+    if (value.find(" ") != std:: string:: npos)
     {
-        if (line[i] != ' ')
-            value += line[i];
+        size_t first = value.find_first_not_of(" ");
+        size_t last = value.find_last_not_of(" ");
+        value = value.substr(first, last - first + 1);
+        if (value.find(" ") != std:: string:: npos)
+        {
+            error_message = "Error: bad input => " + value;
+            return (error_message);
+        }
     }
     if (value.size() == 0)
     {
-        error_message = "Error: bad input => ";
+        error_message = "Error: bad input => " + value;
         return (error_message);
     }
     return (value);
@@ -134,7 +144,7 @@ std:: string BitcoinExchange:: parse_date(std:: string line)
         error_message = "Error: bad input => " + line;
         return (error_message);
     }
-    for (int i = 0; i != found_pipe - 1; i++)
+    for (int i = 0; i != found_pipe; i++)
         date += line[i];
     if (date.find(" ") != std:: string:: npos)
     {
@@ -201,7 +211,7 @@ std:: string BitcoinExchange:: check_year_month_day(std:: string date)
         std::cerr << e.what() << '\n';
         std:: exit(1);
     }
-    if (conver_day <= 0 || conver_month <= 0 || conver_year <= 0 || conver_day > 31)
+    if (conver_day <= 0 || conver_month <= 0 || conver_year <= 0 || conver_year < 2009 || conver_year > 2022 || (conver_year == 2009 && conver_day == 01 && conver_month == 1) || (conver_year == 2022 && conver_month >= 03 && conver_day > 29))
         return std::string("Error: bad input => " + date);
     if (!is_month_valid(conver_day, conver_year, conver_month))
         return std::string("Error: bad input => " + date);
@@ -330,7 +340,7 @@ void BitcoinExchange:: compare_return_input(void)
         str = this->input_data[i].second;
         if (str.find("Error") != std:: string:: npos)
         {
-            std:: cout << str << date << std:: endl;
+            std:: cout << str << std:: endl;
             continue;
         }
         if (!contains_only_number(str))
@@ -344,7 +354,7 @@ void BitcoinExchange:: compare_return_input(void)
             continue;
         }
         key = std::stof(str);
-        if (key < 0 || key > 100)
+        if (key < 0 || key > 1000)
         {
             if (key < 0)
             {
